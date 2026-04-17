@@ -8,11 +8,16 @@ from app.service_2.indexer import rebuild_index
 
 app = FastAPI()
 
-UPLOAD_DIR = "D:/new_1_image/gallery"
-TEMP_DIR = "D:/new_1_image/temp"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+
+UPLOAD_DIR = os.path.join(BASE_DIR, "gallery")
+TEMP_DIR = os.path.join(BASE_DIR, "temp")
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(TEMP_DIR, exist_ok=True)
+
+
 
 
 @app.post("/upload/")
