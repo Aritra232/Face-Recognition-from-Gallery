@@ -67,3 +67,28 @@ def rebuild_index(gallery_path="gallery"):
     print(f"✅ Rebuild complete: {added} face vectors kept, {removed} stale images removed.")
 
     return {"kept": added, "removed": removed}
+
+
+def build_index_from_gallery(gallery_path):
+    from app.model.model import get_face_embeddings
+
+    index = faiss.IndexFlatL2(DIM)
+    face_to_image = []
+
+    for img in os.listdir(gallery_path):
+        img_path = os.path.join(gallery_path, img)
+
+        if not img_path.lower().endswith((".jpg", ".jpeg", ".png")):
+            continue
+
+        embeddings = get_face_embeddings(img_path)
+
+        for emb in embeddings:
+            index.add(emb.reshape(1, -1).astype("float32"))
+            face_to_image.append(img_path)
+
+    save_index(index, face_to_image)
+
+    print("✅ Auto index built from gallery")
+
+    return index, face_to_image

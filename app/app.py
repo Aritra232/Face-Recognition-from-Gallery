@@ -1,8 +1,8 @@
 from fastapi import FastAPI, UploadFile, File
-import shutil
 import os
+from io import BytesIO
 
-from app.service_1.add_image import process_and_add
+from app.model.model import get_face_embeddings_from_bytes
 from app.service_3.search import search_similar
 from app.service_2.indexer import rebuild_index
 
@@ -12,23 +12,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
 UPLOAD_DIR = os.path.join(BASE_DIR, "gallery")
-TEMP_DIR = os.path.join(BASE_DIR, "temp")
-
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(TEMP_DIR, exist_ok=True)
-
-
-
-
-@app.post("/upload/")
-async def upload(file: UploadFile = File(...)):
-    path = os.path.join(UPLOAD_DIR, file.filename)
-
-    with open(path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    process_and_add(path)
-    return {"message": "Image uploaded and indexed"}
 
 
 @app.post("/search/")
@@ -39,23 +23,21 @@ async def search(
 ):
     files = [f for f in [file1, file2, file3] if f is not None]
 
-    query_paths = []
-    for file in files:
-        path = os.path.join(TEMP_DIR, file.filename)
-        with open(path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        query_paths.append(path)
+    query_embeddings = []
 
-    results = search_similar(query_paths)
+    for file in files:
+        contents = await file.read()
+        file_stream = BytesIO(contents)
+
+        embeddings = get_face_embeddings_from_bytes(file_stream)
+        query_embeddings.extend(embeddings)
+
+    results = search_similar(query_embeddings, gallery_path=UPLOAD_DIR)
+
     return {"matched_images": results}
 
 
-# ✅ FIX 2: Call this endpoint whenever images are moved / deleted from gallery
 @app.post("/rebuild/")
 async def rebuild():
-    """
-    Re-indexes the gallery folder from scratch.
-    Call this after moving or deleting images so stale FAISS entries are removed.
-    """
     stats = rebuild_index(gallery_path=UPLOAD_DIR)
     return {"message": "Index rebuilt", **stats}
