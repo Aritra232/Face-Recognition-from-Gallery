@@ -36,14 +36,6 @@ pip install fastapi uvicorn face_recognition numpy faiss-cpu python-multipart
 
 Make sure your images are inside the `gallery/` folder, then run:
 
-python init_index.py  
-
-This will:
-- Detect faces in all images  
-- Generate embeddings  
-- Create FAISS index  
-
----
 
 ### 4. Run Backend (FastAPI)
 
