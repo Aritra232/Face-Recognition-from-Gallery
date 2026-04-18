@@ -10,4 +10,4 @@ def process_and_add(image_path):
 
     add_faces_to_index(embeddings, image_path)
 
-    print(f"✅ Indexed {len(embeddings)} faces from {image_path}")
+    print(f"✅ Indexed (updated) {len(embeddings)} faces from {image_path}")

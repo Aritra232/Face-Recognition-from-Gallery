@@ -1,18 +1,18 @@
 import os
 import numpy as np
 import face_recognition
+from app.service_2.indexer import load_index, build_index_from_gallery, is_index_outdated
 
-from app.service_2.indexer import load_index, build_index_from_gallery
-
-THRESHOLD = 0.47
-REFINE_THRESHOLD = 0.42
+THRESHOLD = 0.46
+REFINE_THRESHOLD = 0.41
 
 
 def search_similar(query_embeddings, gallery_path):
     index, face_to_image = load_index()
 
-    if index.ntotal == 0:
-        print("⚠️ Index empty → building automatically...")
+    # 🔥 AUTO UPDATE INDEX IF GALLERY CHANGED
+    if index.ntotal == 0 or is_index_outdated(gallery_path):
+        print("♻️ Gallery changed → rebuilding index...")
         index, face_to_image = build_index_from_gallery(gallery_path)
 
     gallery_embeddings = np.array(
@@ -23,7 +23,7 @@ def search_similar(query_embeddings, gallery_path):
     matched_images = set()
     strong_match_embeddings = []
 
-    # STEP 1: first search
+    # STEP 1
     for query_emb in query_embeddings:
         distances = face_recognition.face_distance(gallery_embeddings, query_emb)
 
@@ -37,7 +37,7 @@ def search_similar(query_embeddings, gallery_path):
             if dist < REFINE_THRESHOLD:
                 strong_match_embeddings.append(gallery_embeddings[idx])
 
-    # STEP 2: refinement search
+    # STEP 2
     if strong_match_embeddings:
         refined_query = np.mean(
             np.vstack(query_embeddings + strong_match_embeddings),
