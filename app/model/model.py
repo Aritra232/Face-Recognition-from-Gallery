@@ -1,6 +1,8 @@
 import face_recognition
 import numpy as np
 
+def get_face_embeddings(image_path):
+    return get_face_embeddings_from_path(image_path)
 
 def get_face_embeddings_from_path(image_path):
     image = face_recognition.load_image_file(image_path)
