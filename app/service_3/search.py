@@ -1,24 +1,34 @@
 import os
 import numpy as np
 import face_recognition
-from app.service_2.indexer import load_index, build_index_from_gallery, is_index_outdated
+from app.model.model import get_face_embeddings
 
 THRESHOLD = 0.46
 REFINE_THRESHOLD = 0.41
 
 
+def get_gallery_data(gallery_path):
+    gallery_data = []
+    for img in os.listdir(gallery_path):
+        img_path = os.path.join(gallery_path, img)
+        if not img_path.lower().endswith((".jpg", ".jpeg", ".png")):
+            continue
+        try:
+            embeddings = get_face_embeddings(img_path)
+            for emb in embeddings:
+                gallery_data.append((emb, img_path))
+        except Exception as e:
+            print(f"Error processing {img_path}: {e}")
+    return gallery_data
+
+
 def search_similar(query_embeddings, gallery_path):
-    index, face_to_image = load_index()
+    gallery_data = get_gallery_data(gallery_path)
+    if not gallery_data:
+        return []
 
-    # 🔥 AUTO UPDATE INDEX IF GALLERY CHANGED
-    if index.ntotal == 0 or is_index_outdated(gallery_path):
-        print("♻️ Gallery changed → rebuilding index...")
-        index, face_to_image = build_index_from_gallery(gallery_path)
-
-    gallery_embeddings = np.array(
-        [index.reconstruct(i) for i in range(index.ntotal)],
-        dtype="float32"
-    )
+    gallery_embeddings = np.array([emb for emb, _ in gallery_data], dtype="float32")
+    face_to_image = [path for _, path in gallery_data]
 
     matched_images = set()
     strong_match_embeddings = []
@@ -30,7 +40,6 @@ def search_similar(query_embeddings, gallery_path):
         for idx, dist in enumerate(distances):
             if dist < THRESHOLD:
                 img_path = face_to_image[idx]
-
                 if os.path.exists(img_path):
                     matched_images.add(img_path)
 
@@ -49,7 +58,6 @@ def search_similar(query_embeddings, gallery_path):
         for idx, dist in enumerate(distances):
             if dist < THRESHOLD:
                 img_path = face_to_image[idx]
-
                 if os.path.exists(img_path):
                     matched_images.add(img_path)
 

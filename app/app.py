@@ -4,7 +4,6 @@ from io import BytesIO
 
 from app.model.model import get_face_embeddings_from_bytes
 from app.service_3.search import search_similar
-from app.service_2.indexer import rebuild_index
 
 app = FastAPI()
 
@@ -49,8 +48,3 @@ async def search(
 
     return {"matched_images": results}
 
-
-@app.post("/rebuild/")
-async def rebuild():
-    stats = rebuild_index(gallery_path=UPLOAD_DIR)
-    return {"message": "Index rebuilt", **stats}
