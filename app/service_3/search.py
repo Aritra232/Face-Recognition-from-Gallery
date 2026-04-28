@@ -3,7 +3,7 @@ import numpy as np
 import face_recognition
 from app.model.model import get_face_embeddings
 
-THRESHOLD = 0.46
+THRESHOLD = 0.50 
 REFINE_THRESHOLD = 0.41
 
 
